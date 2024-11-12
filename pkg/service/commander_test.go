@@ -16,7 +16,7 @@ func (m *MockCommander) GetSystemInfo() (domain.SystemInfo, error) {
 	}, nil
 }
 
-func (m *MockCommander) Ping(address string) (domain.PingResult, error) {
+func (m *MockCommander) Ping(_ string) (domain.PingResult, error) {
 	return domain.PingResult{
 		Successful: true,
 	}, nil

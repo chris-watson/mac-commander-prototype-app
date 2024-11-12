@@ -15,7 +15,7 @@ import (
 	service "github.com/chris-watson/mac-windows-installer-app/pkg/service"
 )
 
-func StartServer() {
+func StartServer(port int) {
 
 	platform := getPlatform()
 	fmt.Println("Running on", platform)
@@ -34,7 +34,7 @@ func StartServer() {
 	mux.HandleFunc("/execute", handler.HandleCommand)
 
 	srv := &http.Server{
-		Addr:    ":8080",
+		Addr:    fmt.Sprintf(":%d", port),
 		Handler: mux,
 	}
 
@@ -43,7 +43,7 @@ func StartServer() {
 
 	// start server in a goroutine
 	go func() {
-		log.Println("Server starting on port 8080")
+		log.Println("Server starting on port:", port)
 		serverErrors <- srv.ListenAndServe()
 	}()
 

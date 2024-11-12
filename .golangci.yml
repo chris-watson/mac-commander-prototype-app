@@ -1,7 +1,6 @@
 linters:
   enable:
     - gofmt
-    - golint
     - govet
     - errcheck
     - staticcheck
@@ -9,6 +8,7 @@ linters:
     - ineffassign
     - unused
     - misspell
+    - revive
 
 run:
   deadline: 5m
@@ -20,7 +20,5 @@ issues:
         - errcheck
 
 linters-settings:
-  govet:
-    check-shadowing: true
-  golint:
+  revive:
     min-confidence: 0.8

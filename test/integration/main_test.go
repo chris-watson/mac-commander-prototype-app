@@ -1,4 +1,4 @@
-package integration
+package integration_test
 
 import (
 	"os"
@@ -8,11 +8,13 @@ import (
 	"github.com/chris-watson/mac-windows-installer-app/app"
 )
 
+const testPort = 8899
+
 func TestMain(m *testing.M) {
 
 	// start server in a goroutine
 	go func() {
-		app.Start()
+		app.Start(testPort)
 	}()
 
 	// give server some time to start

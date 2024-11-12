@@ -2,30 +2,34 @@
 
 set -e  
 
-APP_NAME="Commander"
+
+APP_NAME=$1
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BUILD_DIR="$SCRIPT_DIR/../build"
-BUNDLE_DIR="$BUILD_DIR/$APP_NAME.app"
-PKG_DIR="$BUNDLE_DIR/Contents"
-RESOURCES_DIR="$PKG_DIR/Resources"
+PKG_DIR="$BUILD_DIR/pkg"
+BUNDLE_DIR="$PKG_DIR/$APP_NAME.app"
+CONTENTS_DIR="$BUNDLE_DIR/Contents"
+RESOURCES_DIR="$CONTENTS_DIR/Resources"
 MACOS_DIR="$RESOURCES_DIR/MacOS"
+DIST_DIR="$BUILD_DIR/dist"
 INSTALL_PATH="/Applications"
-LAUNCH_AGENT_PLIST="$BUNDLE_DIR/com.askchriswatson.$APP_NAME.plist"
+LAUNCH_AGENT_PLIST="$PKG_DIR/com.askchriswatson.$APP_NAME.plist"
 ICONSET_DIR="$BUILD_DIR/$APP_NAME.iconset"
 ICNS_FILE="$RESOURCES_DIR/$APP_NAME.icns"
 
-mkdir -p "$BUILD_DIR"
-rm -rf "$BUNDLE_DIR"
-mkdir -p "$PKG_DIR"
+
+rm -rf "$DIST_DIR"
+rm -rf "$PKG_DIR"
+mkdir -p "$CONTENTS_DIR"
 mkdir -p "$RESOURCES_DIR"
 mkdir -p "$MACOS_DIR"
-
-# build app
-GOOS=darwin GOARCH=amd64 go build -o "$BUILD_DIR/$APP_NAME" ./cmd/main.go
+mkdir -p "$DIST_DIR"
+mkdir -p "$PKG_DIR"
+mkdir -p "$BUNDLE_DIR"
 
 # check if build was successful
 if [ ! -f "$BUILD_DIR/$APP_NAME" ]; then
-    echo "Error: Failed to build the application"
+    echo "Error: Please build the application before running this script"
     exit 1
 fi
 
@@ -33,7 +37,7 @@ fi
 cp "$BUILD_DIR/$APP_NAME" "$MACOS_DIR/"
 
 # create Info.plist
-cat <<EOF > "$PKG_DIR/Info.plist"
+cat <<EOF > "$CONTENTS_DIR/Info.plist"
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -79,12 +83,12 @@ fi
 
 
 # add script for installing the plist to the pkg dir
-cat <<EOF > "$BUNDLE_DIR/install_launch_agent_plist.sh"
+cat <<EOF > "$PKG_DIR/install_launch_agent_plist.sh"
 #!/bin/bash
 
 APP_NAME="$APP_NAME"
 PLIST_NAME="com.askchriswatson.\$APP_NAME.plist"
-PLIST_SOURCE_PATH="/Volumes/\$APP_NAME Installer/\$PLIST_NAME"
+PLIST_SOURCE_PATH="/Volumes/\$APP_NAME-Installer/\$PLIST_NAME"
 PLIST_DEST_PATH="\$HOME/Library/LaunchAgents/\$PLIST_NAME"
 
 # Copy the plist file to the LaunchAgents directory
@@ -109,10 +113,10 @@ iconutil -c icns -o "$ICNS_FILE" "$ICONSET_DIR"
 rm -rf "$ICONSET_DIR"
 
 # set executable 
-chmod +x "$BUNDLE_DIR/install_launch_agent_plist.sh"
+chmod +x "$PKG_DIR/install_launch_agent_plist.sh"
 
 # create README 
-cat <<EOF > "$BUNDLE_DIR/README.txt"
+cat <<EOF > "$PKG_DIR/README.txt"
 Installation Instructions
 =======================
 
@@ -120,7 +124,7 @@ To install the launch agent that will automatically start $APP_NAME:
 
 1. Open Terminal
 2. Navigate to the mounted installer volume:
-   cd "/Volumes/$APP_NAME Installer"
+   cd "/Volumes/$APP_NAME-Installer"
 
 3. Run the installation script:
    ./install_launch_agent_plist.sh
@@ -143,22 +147,23 @@ To uninstall:
 EOF
 
 
-# Remove existing DMG if it exists
-rm -f "$BUILD_DIR/$APP_NAME.dmg"
 
-TMP_DMG_DIR=$(mktemp -d)
+# sign the app bundle
+codesign --force --deep --sign - \
+    "$BUNDLE_DIR"
 
-cp -R "$BUNDLE_DIR" "$TMP_DMG_DIR/"
+# verify the signature
+codesign --verify --deep --strict "$BUNDLE_DIR"
+codesign --force -vv --deep "$BUNDLE_DIR" 
+codesign --force --deep --sign - "$BUNDLE_DIR"
 
-# make sure our addl files make it into the DMG
-cp "$BUNDLE_DIR/install_launch_agent_plist.sh" "$TMP_DMG_DIR/"
-cp "$BUNDLE_DIR/README.txt" "$TMP_DMG_DIR/"
-cp "$LAUNCH_AGENT_PLIST" "$TMP_DMG_DIR/"
 
+
+rm -f "$DIST_DIR/$APP_NAME.dmg"
 
 # create the DMG
 create-dmg \
-    --volname "$APP_NAME Installer" \
+    --volname "$APP_NAME-Installer" \
     --window-pos 200 120 \
     --window-size 800 600 \
     --icon-size 100 \
@@ -168,20 +173,12 @@ create-dmg \
     --icon "com.askchriswatson.$APP_NAME.plist" 400 300 \
     --app-drop-link 600 150 \
     --no-internet-enable \
-    "$BUILD_DIR/$APP_NAME.dmg" \
-    "$TMP_DMG_DIR"
+    "$DIST_DIR/$APP_NAME.dmg" \
+    "$PKG_DIR"
 
-# clean up tmp dir
-rm -rf "$TMP_DMG_DIR"
+# clean up
+rm -rf "$PKG_DIR"
 
-# sign the app bundle
-codesign --force --deep --sign - \
-    "$BUNDLE_DIR"
-
-# verify the signature
-codesign --verify --deep --strict "$BUNDLE_DIR"
-codesign --force -vv --deep "$BUNDLE_DIR" # Sign the app bundle
-codesign --force --deep --sign - "$BUNDLE_DIR"
 
 # a real app would have some notarization steps here
 

@@ -16,7 +16,7 @@ type mockCommanderService struct{}
 
 var mockService = &mockCommanderService{}
 
-func (m *mockCommanderService) HandlePing(host string) (domain.PingResult, error) {
+func (m *mockCommanderService) HandlePing(_ string) (domain.PingResult, error) {
 	return domain.PingResult{
 		Successful: true,
 		Time:       100,

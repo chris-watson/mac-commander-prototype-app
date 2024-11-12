@@ -3,6 +3,7 @@ package integration_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"testing"
@@ -23,7 +24,7 @@ func TestCommandPingLocalhost(t *testing.T) {
 	}
 
 	resp, err := http.Post(
-		"http://localhost:8080/execute",
+		fmt.Sprintf("http://localhost:%d/execute", testPort),
 		"application/json",
 		bytes.NewBuffer(jsonData),
 	)
