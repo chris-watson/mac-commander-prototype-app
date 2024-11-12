@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1">
+    <title>CommanderPrototype Installer</title>
+    <choices-outline>
+        <line choice="default">
+            <line choice="com.askchriswatson.CommanderPrototype"/>
+        </line>
+    </choices-outline>
+    <choice id="com.askchriswatson.CommanderPrototype" title="CommanderPrototype">
+        <pkg-ref id="com.askchriswatson.CommanderPrototype"/>
+    </choice>
+    <pkg-ref id="com.askchriswatson.CommanderPrototype" version="1.0" onConclusion="none">#CommanderPrototype-component.pkg</pkg-ref>
+</installer-gui-script>
