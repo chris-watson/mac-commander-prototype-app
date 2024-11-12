@@ -1,4 +1,4 @@
-# Cross-Platform Mac/WindowsCommand Execution Application
+# Commander: A Cross-Platform Mac/Windows Command Execution Application
 
 ## Overview
 This application is a cross-platform command execution tool capable of executing simple system commands (ping and system info). It listens for HTTP requests and returns JSON responses.
